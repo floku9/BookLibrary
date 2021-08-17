@@ -13,6 +13,7 @@ namespace BookLibrary.Models
         [BsonRepresentation(BsonType.ObjectId)]
         public string Id { get; set; }
 
+        public string Owner { get; set; }
         [BsonElement("Name")]
         public string BookName { get; set; }
         public string Author { get; set; }

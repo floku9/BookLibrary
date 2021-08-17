@@ -1,10 +1,13 @@
 ﻿using BookLibrary.Models;
 using BookLibrary.Services;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
+using System.Security.Claims;
 using System.Threading.Tasks;
 
 namespace BookLibrary.Controllers
@@ -13,11 +16,14 @@ namespace BookLibrary.Controllers
     [Route("api/[controller]")]
     public class BooksController : Controller
     {
+        
         private readonly BookService _bookService;
+        private readonly string _ownerName;
 
-        public BooksController(BookService bookService)
+        public BooksController(BookService bookService, IHttpContextAccessor contextAccessor)
         {
             _bookService = bookService;
+            _ownerName = contextAccessor.HttpContext.User.Identity.Name;
         }
 
         /// <summary>
@@ -30,7 +36,8 @@ namespace BookLibrary.Controllers
         [Route("getbooks")]
         public async Task<IActionResult> GetBooks(string genre = null)
         {
-            List<Book> books = genre == null ? await _bookService.GetAsync() : await _bookService.GetAsync(genre);
+           
+            List<Book> books = genre == null ? await _bookService.GetAsync(_ownerName) : await _bookService.GetAsync(genre, _ownerName);
 
             if (books == null)
             {
@@ -55,7 +62,7 @@ namespace BookLibrary.Controllers
         {
             try
             {
-                Book book = await _bookService.GetByIdAsync(id);
+                Book book = await _bookService.GetByIdAsync(id, _ownerName);
                 if (book == null)
                 {
                     return NotFound(new Response
@@ -85,6 +92,7 @@ namespace BookLibrary.Controllers
         [Route("add")]
         public async Task<IActionResult> Add(Book book)
         {
+            book.Owner = _ownerName;
             if (!_bookService.BookIsRight(book))
                 return BadRequest(new Response()
                 {
@@ -105,7 +113,7 @@ namespace BookLibrary.Controllers
         [Route("update")]
         public async Task<IActionResult> Update(string id, Book book)
         {
-            var findedBook = await _bookService.GetByIdAsync(id);
+            var findedBook = await _bookService.GetByIdAsync(id, _ownerName);
 
             if (findedBook == null)
             {
@@ -123,7 +131,7 @@ namespace BookLibrary.Controllers
                 });
             }
 
-            await _bookService.UpdateAsync(id, book);
+            await _bookService.UpdateAsync(id, _ownerName, book);
             return Ok(new Response()
             {
                 Result = "Книга успешно обновлена"
@@ -139,7 +147,7 @@ namespace BookLibrary.Controllers
         [Route("delete")]
         public async Task<IActionResult> Delete(string id)
         {
-            var findedBook = await _bookService.GetByIdAsync(id);
+            var findedBook = await _bookService.GetByIdAsync(id, _ownerName);
 
             if (findedBook == null)
             {
@@ -149,7 +157,7 @@ namespace BookLibrary.Controllers
                 });
             }
 
-            await _bookService.DeleteAsync(id);
+            await _bookService.DeleteAsync(id, _ownerName);
 
             return Ok(new Response()
             {

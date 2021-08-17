@@ -7,6 +7,6 @@ namespace BookLibrary.Models
 {
     public class BookNotFoundByIdError : IError
     {
-        public string Message { get; set; } = "Книги с данным ключом нет в библиотеке";
+        public string Message { get; set; } = "Книги с данным ключом нет в вашей библиотеке";
     }
 }

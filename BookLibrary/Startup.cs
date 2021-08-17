@@ -70,7 +70,7 @@ namespace BookLibrary
                         }
                     };
                 });
-
+            services.AddHttpContextAccessor();
             services.AddSingleton<BookService>();
             services.AddSingleton<AuthService>();
             services.AddControllers();
