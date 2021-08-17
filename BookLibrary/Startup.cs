@@ -65,7 +65,7 @@ namespace BookLibrary
                             await context.Response.WriteAsync(JsonConvert.SerializeObject(
                                 new Response()
                                 {
-                                    Error = new SimpleError() { Message = "Вы не авторизованы" }
+                                    Error = new SimpleError() { Message = "Р’С‹ РЅРµ Р°РІС‚РѕСЂРёР·РѕРІР°РЅС‹" }
                                 }));
                         }
                     };
