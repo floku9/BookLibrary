@@ -113,29 +113,40 @@ namespace BookLibrary.Controllers
         [Route("update")]
         public async Task<IActionResult> Update(string id, Book book)
         {
-            var findedBook = await _bookService.GetByIdAsync(id, _ownerName);
-
-            if (findedBook == null)
+            try
             {
-                return NotFound(new Response()
+                var findedBook = await _bookService.GetByIdAsync(id, _ownerName);
+
+                if (findedBook == null)
                 {
-                    Error = new BookNotFoundByIdError()
+                    return NotFound(new Response()
+                    {
+                        Error = new BookNotFoundByIdError()
+                    });
+                }
+
+                else if (!_bookService.BookIsRight(book))
+                {
+                    return BadRequest(new Response()
+                    {
+                        Error = new SimpleError() { Message = "Вы заполнили не все необходимые поля книги" }
+                    });
+                }
+
+                await _bookService.UpdateAsync(id, _ownerName, book);
+                return Ok(new Response()
+                {
+                    Result = "Книга успешно обновлена"
                 });
             }
-
-            else if (!_bookService.BookIsRight(book))
+            catch (FormatException)
             {
-                return BadRequest(new Response()
+
+                return BadRequest(new Response
                 {
-                    Error = new SimpleError() { Message = "Вы заполнили не все необходимые поля книги" }
+                    Error = new SimpleError() { Message = "Id книги имеет неправильный формат" }
                 });
             }
-
-            await _bookService.UpdateAsync(id, _ownerName, book);
-            return Ok(new Response()
-            {
-                Result = "Книга успешно обновлена"
-            });
         }
 
         /// <summary>
