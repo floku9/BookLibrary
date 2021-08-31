@@ -8,6 +8,8 @@ using System.Security.Claims;
 using BookLibrary.Models;
 using MongoDB.Driver;
 using System.Threading.Tasks;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace BookLibrary.Services
 {
@@ -38,21 +40,49 @@ namespace BookLibrary.Services
 
         public async Task<ClaimsIdentity> GetIdentityAsync(string username, string password)
         {
-            User user = await _users.Find(u => u.Name == username && u.Password == password).FirstOrDefaultAsync();
+            User user = await _users.Find(u => u.Name == username).FirstOrDefaultAsync();
             if (user != null)
             {
-                var claims = new List<Claim>
+                if (IsPasswordValid(user, password))
+                {
+                    var claims = new List<Claim>
                 {
                     new Claim(ClaimsIdentity.DefaultNameClaimType, user.Name),
                     new Claim(ClaimsIdentity.DefaultRoleClaimType, user.Role.ToString())
                 };
 
-                ClaimsIdentity claimsIdentity =
-                new ClaimsIdentity(claims, "Token", ClaimsIdentity.DefaultNameClaimType,
-                    ClaimsIdentity.DefaultRoleClaimType);
-                return claimsIdentity;
+                    ClaimsIdentity claimsIdentity =
+                    new ClaimsIdentity(claims, "Token", ClaimsIdentity.DefaultNameClaimType,
+                        ClaimsIdentity.DefaultRoleClaimType);
+                    return claimsIdentity;
+                }
+                return null;
             }
             return null;
+        }
+        
+        public async Task AddUserAsync(string username, string password)
+        {
+            User user = new User()
+            {
+                Name = username,
+                Salt = Guid.NewGuid().ToString(),
+                Role = Models.Enums.Roles.User
+            };
+
+            user.Password = EncodePassword(password, user.Salt);
+            await _users.InsertOneAsync(user);
+        }
+
+        private static bool IsPasswordValid(User user, string password) => user.Password == EncodePassword(password, user.Salt);
+
+        public async Task<bool> UserAlreadyExistAsync(string username) => await _users.Find(u => u.Name == username).AnyAsync();
+
+        private static string EncodePassword(string password, string salt)
+        {
+            var hMACMD5 = new HMACMD5(Encoding.UTF8.GetBytes(salt));
+            var saltedHash = hMACMD5.ComputeHash(Encoding.UTF8.GetBytes(password));
+            return Convert.ToBase64String(saltedHash);
         }
     }
 }

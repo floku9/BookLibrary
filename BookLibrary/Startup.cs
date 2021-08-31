@@ -54,6 +54,7 @@ namespace BookLibrary
 
                         IssuerSigningKey = AuthSettings.GetSymmetricSecurityKey(),
                         ValidateIssuerSigningKey = true
+                         
                     };
                     opt.Events = new JwtBearerEvents
                     {
